@@ -3,9 +3,15 @@ import SafeRouteMap from "../components/map/SafeRouteMap";
 import HazardReportForm from "../components/hazards/HazardReportForm";
 import SosButton from "../components/common/SosButton";
 import SafetyRouteCard from "../components/common/SafetyRouteCard";
-import { Location, SafeRoute, HazardType, HazardSeverity } from "../types";
-import hazardsData from "../data/hazards.json";
+import {
+  Location,
+  SafeRoute,
+  HazardType,
+  HazardSeverity,
+  HazardReport,
+} from "../types";
 import sheltersData from "../data/shelters.json";
+import { appendHazard, getHazards } from "../utils/fileOperations";
 
 // Kathmandu University coordinates as fallback
 const KU_COORDINATES: Location = {
@@ -24,6 +30,21 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [locationPermission, setLocationPermission] =
     useState<PermissionState | null>(null);
+  const [hazards, setHazards] = useState<HazardReport[]>([]);
+  const [shelters, setShelters] = useState(sheltersData.shelters);
+
+  // Load hazards from localStorage or JSON file
+  useEffect(() => {
+    const loadHazards = async () => {
+      try {
+        const loadedHazards = await getHazards();
+        setHazards(loadedHazards);
+      } catch (error) {
+        console.error("Error loading hazards:", error);
+      }
+    };
+    loadHazards();
+  }, []);
 
   // Check location permission status
   useEffect(() => {
@@ -115,8 +136,6 @@ const HomePage: React.FC = () => {
   // Calculate routes when destination changes
   useEffect(() => {
     if (destination && userLocation) {
-      // In a real app, we would call a routing API here
-      // For now, we'll create a simple mock route
       const mockRoute: SafeRoute = {
         id: "route-1",
         origin: userLocation,
@@ -140,14 +159,44 @@ const HomePage: React.FC = () => {
     setDestination(location);
   };
 
-  const handleReportSubmit = (reportData: {
+  const handleReportSubmit = async (reportData: {
     type: HazardType;
     severity: HazardSeverity;
     description: string;
     location: Location;
   }) => {
-    console.log("Hazard report submitted:", reportData);
-    alert("Hazard reported successfully!");
+    try {
+      const newHazard: HazardReport = {
+        id: `h${hazards.length + 1}`,
+        type: reportData.type,
+        severity: reportData.severity,
+        description: reportData.description,
+        location: reportData.location,
+        reportedAt: new Date().toISOString(),
+        verified: false,
+        upvotes: 0,
+        impactRadius:
+          reportData.severity === "critical"
+            ? 500
+            : reportData.severity === "high"
+            ? 400
+            : reportData.severity === "medium"
+            ? 300
+            : 200,
+        reportedBy: "User Report",
+      };
+
+      // Update local state immediately
+      setHazards((prev) => [...prev, newHazard]);
+
+      // Store in localStorage
+      await appendHazard(newHazard);
+
+      alert("Hazard reported successfully!");
+    } catch (error) {
+      console.error("Error submitting hazard report:", error);
+      alert("Failed to submit hazard report. Please try again.");
+    }
   };
 
   const handleSosActivate = () => {
@@ -199,8 +248,8 @@ const HomePage: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
         <SafeRouteMap
-          hazards={hazardsData.hazards}
-          shelters={sheltersData.shelters}
+          hazards={hazards}
+          shelters={shelters}
           userLocation={userLocation || undefined}
           selectedRoute={selectedRoute}
           onMapClick={handleMapClick}

@@ -43,9 +43,11 @@ const RoutingMachine = ({ route }: { route: SafeRoute }) => {
     const routingControl = L.Routing.control({
       waypoints: [
         L.latLng(route.origin.lat, route.origin.lng),
-        ...route.waypoints.map((wp) => L.latLng(wp.lat, wp.lng)),
         L.latLng(route.destination.lat, route.destination.lng),
       ],
+      router: L.Routing.osrmv1({
+        serviceUrl: "https://router.project-osrm.org/route/v1",
+      }),
       routeWhileDragging: true,
       show: false,
       addWaypoints: false,
@@ -55,6 +57,18 @@ const RoutingMachine = ({ route }: { route: SafeRoute }) => {
         styles: [{ color: "#3B82F6", weight: 4, opacity: 0.7 }],
       },
     }).addTo(map);
+
+    // Add route calculation event listener
+    routingControl.on("routesfound", (e) => {
+      const routes = e.routes;
+      if (routes && routes.length > 0) {
+        const route = routes[0];
+        console.log("Route found:", {
+          distance: route.summary.totalDistance,
+          duration: route.summary.totalTime,
+        });
+      }
+    });
 
     return () => {
       map.removeControl(routingControl);

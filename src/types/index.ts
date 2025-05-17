@@ -1,31 +1,31 @@
 // Types and interfaces for the application
 
 export enum HazardType {
-  FLOOD = 'flood',
-  FIRE = 'fire',
-  EARTHQUAKE = 'earthquake',
-  LANDSLIDE = 'landslide',
-  STORM = 'storm',
-  OTHER = 'other'
+  FLOOD = "flood",
+  FIRE = "fire",
+  EARTHQUAKE = "earthquake",
+  LANDSLIDE = "landslide",
+  STORM = "storm",
+  OTHER = "other",
 }
 
 export enum HazardSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  CRITICAL = "critical",
 }
 
 export enum ConnectionStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  LORA = 'lora'
+  ONLINE = "online",
+  OFFLINE = "offline",
+  LORA = "lora",
 }
 
 export enum UserRole {
-  ADMIN = 'admin',
-  TRUSTED = 'trusted',
-  GENERAL = 'general'
+  ADMIN = "admin",
+  TRUSTED = "trusted",
+  GENERAL = "general",
 }
 
 export interface Location {
@@ -44,6 +44,7 @@ export interface HazardReport {
   verified: boolean;
   upvotes: number;
   image?: string;
+  impactRadius: number;
 }
 
 export interface SafeShelter {
@@ -54,6 +55,7 @@ export interface SafeShelter {
   facilityType: string;
   contact: string;
   currentOccupancy?: number;
+  facilities: string[];
 }
 
 export interface SafeRoute {
