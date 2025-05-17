@@ -1,0 +1,46 @@
+{
+  "hazards": [
+    {
+      "id": "h1",
+      "type": "landslide",
+      "severity": "high",
+      "description": "Active landslide zone on Dhulikhel-Banepa road",
+      "location": {
+        "lat": 27.6150,
+        "lng": 85.5350
+      },
+      "reportedAt": "2024-03-20T10:00:00Z",
+      "verified": true,
+      "upvotes": 15,
+      "impactRadius": 500
+    },
+    {
+      "id": "h2",
+      "type": "flood",
+      "severity": "medium",
+      "description": "Flooding in Banepa area",
+      "location": {
+        "lat": 27.6300,
+        "lng": 85.5200
+      },
+      "reportedAt": "2024-03-20T09:30:00Z",
+      "verified": true,
+      "upvotes": 8,
+      "impactRadius": 300
+    },
+    {
+      "id": "h3",
+      "type": "road_damage",
+      "severity": "critical",
+      "description": "Severe road damage on Banepa-Sanga road",
+      "location": {
+        "lat": 27.6400,
+        "lng": 85.5100
+      },
+      "reportedAt": "2024-03-20T11:00:00Z",
+      "verified": true,
+      "upvotes": 20,
+      "impactRadius": 400
+    }
+  ]
+} 

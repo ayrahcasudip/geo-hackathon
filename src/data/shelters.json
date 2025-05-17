@@ -1,0 +1,60 @@
+{
+  "shelters": [
+    {
+      "id": "s1",
+      "name": "Dhulikhel Hospital",
+      "facilityType": "Hospital",
+      "capacity": 500,
+      "currentOccupancy": 0,
+      "contact": "+977-011-490497",
+      "location": {
+        "lat": 27.6175,
+        "lng": 85.5525
+      },
+      "status": "active",
+      "facilities": ["Medical Care", "Emergency Services", "Shelter"]
+    },
+    {
+      "id": "s2",
+      "name": "Banepa Hospital",
+      "facilityType": "Hospital",
+      "capacity": 300,
+      "currentOccupancy": 0,
+      "contact": "+977-011-663001",
+      "location": {
+        "lat": 27.6275,
+        "lng": 85.5275
+      },
+      "status": "active",
+      "facilities": ["Medical Care", "Emergency Services", "Shelter"]
+    },
+    {
+      "id": "s3",
+      "name": "Bhaktapur Hospital",
+      "facilityType": "Hospital",
+      "capacity": 400,
+      "currentOccupancy": 0,
+      "contact": "+977-01-661001",
+      "location": {
+        "lat": 27.6725,
+        "lng": 85.4275
+      },
+      "status": "active",
+      "facilities": ["Medical Care", "Emergency Services", "Shelter"]
+    },
+    {
+      "id": "s4",
+      "name": "Sanga Emergency Center",
+      "facilityType": "Emergency Center",
+      "capacity": 200,
+      "currentOccupancy": 0,
+      "contact": "+977-011-490123",
+      "location": {
+        "lat": 27.6475,
+        "lng": 85.5175
+      },
+      "status": "active",
+      "facilities": ["Emergency Services", "Shelter", "Basic Medical Care"]
+    }
+  ]
+} 

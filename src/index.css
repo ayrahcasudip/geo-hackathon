@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animation for hold-to-activate SOS button */
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.animate-grow-x {
+  animation-name: grow-x;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* Custom styles for map components */
+.leaflet-container {
+  z-index: 10;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+}
+
+.leaflet-popup-content {
+  margin: 0.5rem;
+}
+
+/* Ensure form controls have sufficient size on mobile */
+@media (max-width: 640px) {
+  button, input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+}
