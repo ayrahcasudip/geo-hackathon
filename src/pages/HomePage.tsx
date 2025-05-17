@@ -12,6 +12,7 @@ import {
 } from "../types";
 import sheltersData from "../data/shelters.json";
 import { appendHazard, getHazards } from "../utils/fileOperations";
+import L from "leaflet";
 
 // Kathmandu University coordinates as fallback
 const KU_COORDINATES: Location = {
@@ -136,24 +137,48 @@ const HomePage: React.FC = () => {
   // Calculate routes when destination changes
   useEffect(() => {
     if (destination && userLocation) {
-      const mockRoute: SafeRoute = {
+      // Find hazards that intersect with the direct path
+      const directPathHazards = hazards.filter((hazard) => {
+        const hazardPoint = L.latLng(hazard.location.lat, hazard.location.lng);
+        const originPoint = L.latLng(userLocation.lat, userLocation.lng);
+        const destPoint = L.latLng(destination.lat, destination.lng);
+
+        // Calculate distance from hazard to line segment
+        const distance = hazardPoint.distanceTo(originPoint);
+        const angle = Math.atan2(
+          destPoint.lat - originPoint.lat,
+          destPoint.lng - originPoint.lng
+        );
+
+        // Project hazard point onto the line
+        const projectedLat = originPoint.lat + distance * Math.sin(angle);
+        const projectedLng = originPoint.lng + distance * Math.cos(angle);
+        const projectedPoint = L.latLng(projectedLat, projectedLng);
+
+        // Check if projection is within the line segment
+        const isWithinSegment =
+          projectedPoint.distanceTo(originPoint) <=
+            originPoint.distanceTo(destPoint) &&
+          projectedPoint.distanceTo(destPoint) <=
+            originPoint.distanceTo(destPoint);
+
+        return isWithinSegment && distance < hazard.impactRadius * 1.2;
+      });
+
+      const safeRoute: SafeRoute = {
         id: "route-1",
         origin: userLocation,
         destination: destination,
-        waypoints: [
-          {
-            lat: (userLocation.lat + destination.lat) / 2,
-            lng: (userLocation.lng + destination.lng) / 2,
-          },
-        ],
-        hazardsAvoided: ["h1", "h2"],
-        distance: 2.5,
-        estimatedTime: 15,
+        waypoints: [],
+        hazardsAvoided: directPathHazards.map((h) => h.id),
+        distance: 0, // Will be updated by the routing machine
+        estimatedTime: 0, // Will be updated by the routing machine
       };
-      setSafeRoutes([mockRoute]);
+
+      setSafeRoutes([safeRoute]);
       setSelectedRouteIndex(0);
     }
-  }, [destination, userLocation]);
+  }, [destination, userLocation, hazards]);
 
   const handleMapClick = (location: Location) => {
     setDestination(location);

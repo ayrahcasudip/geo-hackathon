@@ -13,7 +13,12 @@
       "verified": true,
       "upvotes": 15,
       "impactRadius": 500,
-      "reportedBy": "Emergency Services"
+      "reportedBy": "Emergency Services",
+      "soilMoisture": 78.5,
+      "elevation": 1450,
+      "proximityToRiver": 1.2,
+      "populationDensity": 820,
+      "historicalIncidents": 3
     },
     {
       "id": "h2",
@@ -28,7 +33,12 @@
       "verified": true,
       "upvotes": 8,
       "impactRadius": 300,
-      "reportedBy": "Local Authorities"
+      "reportedBy": "Local Authorities",
+      "soilMoisture": 92.3,
+      "elevation": 1355,
+      "proximityToRiver": 0.4,
+      "populationDensity": 1050,
+      "historicalIncidents": 7
     },
     {
       "id": "h3",
@@ -43,7 +53,12 @@
       "verified": true,
       "upvotes": 20,
       "impactRadius": 400,
-      "reportedBy": "Traffic Police"
+      "reportedBy": "Traffic Police",
+      "soilMoisture": 55.7,
+      "elevation": 1405,
+      "proximityToRiver": 2.5,
+      "populationDensity": 910,
+      "historicalIncidents": 1
     }
   ]
-} 
+}

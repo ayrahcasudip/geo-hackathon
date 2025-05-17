@@ -34,11 +34,27 @@ const MapCenter = ({ center }: { center: [number, number] }) => {
 };
 
 // Custom hook for routing
-const RoutingMachine = ({ route }: { route: SafeRoute }) => {
+const RoutingMachine = ({
+  route,
+  hazards,
+}: {
+  route: SafeRoute;
+  hazards: HazardReport[];
+}) => {
   const map = useMap();
 
   useEffect(() => {
     if (!route) return;
+
+    // Create hazard avoidance areas with buffer zones
+    const hazardAreas = hazards
+      .filter((hazard) => route.hazardsAvoided.includes(hazard.id))
+      .map((hazard) => ({
+        latlng: L.latLng(hazard.location.lat, hazard.location.lng),
+        radius: hazard.impactRadius,
+        // Add a safety buffer to the impact radius
+        bufferRadius: hazard.impactRadius * 1.2,
+      }));
 
     const routingControl = L.Routing.control({
       waypoints: [
@@ -56,6 +72,90 @@ const RoutingMachine = ({ route }: { route: SafeRoute }) => {
       lineOptions: {
         styles: [{ color: "#3B82F6", weight: 4, opacity: 0.7 }],
       },
+      createMarker: () => null,
+      route: (waypoints, callback) => {
+        const router = L.Routing.osrmv1({
+          serviceUrl: "https://router.project-osrm.org/route/v1",
+        });
+
+        router.route(waypoints, (err, routes) => {
+          if (err) {
+            callback(err);
+            return;
+          }
+
+          // Check if route intersects with any hazard area
+          const routeIntersectsHazard = routes.some((route) => {
+            const routePoints = route.coordinates.map((coord) =>
+              L.latLng(coord.lat, coord.lng)
+            );
+
+            return hazardAreas.some((hazard) => {
+              return routePoints.some((point) => {
+                const distance = point.distanceTo(hazard.latlng);
+                return distance < hazard.bufferRadius;
+              });
+            });
+          });
+
+          if (routeIntersectsHazard) {
+            // If route intersects hazards, find alternative route
+            const alternativeWaypoints = [...waypoints];
+            const addedWaypoints = new Set<string>();
+
+            hazardAreas.forEach((hazard) => {
+              // Calculate multiple waypoints around the hazard
+              const angles = [Math.PI / 2, -Math.PI / 2]; // Try both sides
+              const baseAngle = Math.atan2(
+                route.destination.lat - route.origin.lat,
+                route.destination.lng - route.origin.lng
+              );
+
+              angles.forEach((angle) => {
+                const waypointAngle = baseAngle + angle;
+                const waypointLat =
+                  hazard.latlng.lat +
+                  Math.sin(waypointAngle) * (hazard.bufferRadius + 50);
+                const waypointLng =
+                  hazard.latlng.lng +
+                  Math.cos(waypointAngle) * (hazard.bufferRadius + 50);
+
+                const waypointKey = `${waypointLat},${waypointLng}`;
+                if (!addedWaypoints.has(waypointKey)) {
+                  alternativeWaypoints.splice(
+                    1,
+                    0,
+                    L.latLng(waypointLat, waypointLng)
+                  );
+                  addedWaypoints.add(waypointKey);
+                }
+              });
+            });
+
+            // Try routing with alternative waypoints
+            router.route(alternativeWaypoints, (err, altRoutes) => {
+              if (err || !altRoutes || altRoutes.length === 0) {
+                // If alternative routing fails, fall back to original route
+                callback(null, routes);
+              } else {
+                // Check if alternative route is better
+                const originalDistance = routes[0].summary.totalDistance;
+                const altDistance = altRoutes[0].summary.totalDistance;
+
+                if (altDistance < originalDistance * 1.5) {
+                  // Use alternative route if it's not too much longer
+                  callback(null, altRoutes);
+                } else {
+                  // Fall back to original route
+                  callback(null, routes);
+                }
+              }
+            });
+          } else {
+            callback(null, routes);
+          }
+        });
+      },
     }).addTo(map);
 
     // Add route calculation event listener
@@ -67,13 +167,25 @@ const RoutingMachine = ({ route }: { route: SafeRoute }) => {
           distance: route.summary.totalDistance,
           duration: route.summary.totalTime,
         });
+
+        // Draw hazard avoidance zones
+        hazardAreas.forEach((hazard) => {
+          L.circle(hazard.latlng, {
+            radius: hazard.bufferRadius,
+            color: "red",
+            fillColor: "red",
+            fillOpacity: 0.1,
+            weight: 1,
+            dashArray: "5, 5",
+          }).addTo(map);
+        });
       }
     });
 
     return () => {
       map.removeControl(routingControl);
     };
-  }, [map, route]);
+  }, [map, route, hazards]);
 
   return null;
 };
@@ -266,7 +378,9 @@ const SafeRouteMap: React.FC<SafeRouteMapProps> = ({
         )}
 
         {/* Render selected route with routing machine */}
-        {selectedRoute && <RoutingMachine route={selectedRoute} />}
+        {selectedRoute && (
+          <RoutingMachine route={selectedRoute} hazards={hazards} />
+        )}
       </MapContainer>
     </div>
   );

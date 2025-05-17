@@ -1,274 +1,485 @@
-import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle, Users, Map, Radio } from 'lucide-react';
-import HazardFeed from '../components/hazards/HazardFeed';
-import { mockHazards, mockUsers } from '../utils/mockData';
-import { HazardReport } from '../types';
+import React, { useState, useEffect } from "react";
+import {
+  AlertTriangle,
+  Building2,
+  Users,
+  MapPin,
+  Phone,
+  Plus,
+  Edit,
+  Trash2,
+  Shield,
+  Activity,
+  BarChart3,
+} from "lucide-react";
+import { getHazards } from "../utils/fileOperations";
+import { HazardReport, SafeShelter } from "../types";
+import sheltersData from "../data/shelters.json";
 
 const AdminPage: React.FC = () => {
-  const [hazards, setHazards] = useState<HazardReport[]>(mockHazards);
-  const [activeTab, setActiveTab] = useState<'hazards' | 'users' | 'nodes'>('hazards');
-  
-  const handleVerify = (id: string, verified: boolean) => {
-    setHazards(prev => 
-      prev.map(hazard => 
-        hazard.id === id ? { ...hazard, verified } : hazard
-      )
-    );
-  };
-  
-  const handleUpvote = (id: string) => {
-    setHazards(prev => 
-      prev.map(hazard => 
-        hazard.id === id ? { ...hazard, upvotes: hazard.upvotes + 1 } : hazard
-      )
-    );
-  };
-  
-  const getTotalVerifiedHazards = () => {
-    return hazards.filter(h => h.verified).length;
-  };
-  
-  const getUnverifiedHazardsCount = () => {
-    return hazards.filter(h => !h.verified).length;
+  const [hazards, setHazards] = useState<HazardReport[]>([]);
+  const [shelters, setShelters] = useState<SafeShelter[]>(
+    sheltersData.shelters
+  );
+  const [activeTab, setActiveTab] = useState<
+    "hazards" | "shelters" | "analytics"
+  >("hazards");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const loadedHazards = await getHazards();
+        setHazards(loadedHazards);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity.toLowerCase()) {
+      case "high":
+        return "bg-red-100 text-red-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "low":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
+  const getHazardStats = () => {
+    const total = hazards.length;
+    const verified = hazards.filter((h) => h.verified).length;
+    const highSeverity = hazards.filter(
+      (h) => h.severity.toLowerCase() === "high"
+    ).length;
+    const recent = hazards.filter((h) => {
+      const reportedDate = new Date(h.reportedAt);
+      const now = new Date();
+      return now.getTime() - reportedDate.getTime() < 24 * 60 * 60 * 1000; // Last 24 hours
+    }).length;
+
+    return { total, verified, highSeverity, recent };
+  };
+
+  const getShelterStats = () => {
+    const total = shelters.length;
+    const totalCapacity = shelters.reduce(
+      (sum, shelter) => sum + shelter.capacity,
+      0
+    );
+    const availableCapacity = shelters.reduce(
+      (sum, shelter) =>
+        sum + (shelter.capacity - (shelter.currentOccupancy || 0)),
+      0
+    );
+    const emergencyShelters = shelters.filter((s) =>
+      s.facilities.includes("Emergency Services")
+    ).length;
+
+    return { total, totalCapacity, availableCapacity, emergencyShelters };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h1 className="text-2xl font-bold mb-2">Admin Dashboard</h1>
         <p className="text-gray-600">
-          Manage hazard reports, users, and system status.
+          Manage hazards, shelters, and view analytics
         </p>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Reports</p>
-              <p className="text-2xl font-bold">{hazards.length}</p>
+              <p className="text-sm text-gray-500">Total Hazards</p>
+              <h3 className="text-2xl font-bold">{getHazardStats().total}</h3>
             </div>
-            <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
-              <AlertTriangle className="h-6 w-6" />
+            <AlertTriangle className="h-8 w-8 text-red-500" />
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-sm">
+              <span>Verified</span>
+              <span className="font-medium">{getHazardStats().verified}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>High Severity</span>
+              <span className="font-medium">
+                {getHazardStats().highSeverity}
+              </span>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg shadow p-4">
+
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Verified Reports</p>
-              <p className="text-2xl font-bold">{getTotalVerifiedHazards()}</p>
+              <p className="text-sm text-gray-500">Total Shelters</p>
+              <h3 className="text-2xl font-bold">{getShelterStats().total}</h3>
             </div>
-            <div className="p-3 bg-green-100 text-green-600 rounded-full">
-              <CheckCircle className="h-6 w-6" />
+            <Building2 className="h-8 w-8 text-blue-500" />
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-sm">
+              <span>Total Capacity</span>
+              <span className="font-medium">
+                {getShelterStats().totalCapacity}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Available</span>
+              <span className="font-medium">
+                {getShelterStats().availableCapacity}
+              </span>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg shadow p-4">
+
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Active Users</p>
-              <p className="text-2xl font-bold">{mockUsers.length}</p>
+              <p className="text-sm text-gray-500">Recent Hazards</p>
+              <h3 className="text-2xl font-bold">{getHazardStats().recent}</h3>
             </div>
-            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full">
-              <Users className="h-6 w-6" />
+            <Activity className="h-8 w-8 text-yellow-500" />
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-sm">
+              <span>Last 24 Hours</span>
+              <span className="font-medium">{getHazardStats().recent}</span>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg shadow p-4">
+
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">LoRa Nodes</p>
-              <p className="text-2xl font-bold">7</p>
+              <p className="text-sm text-gray-500">Emergency Shelters</p>
+              <h3 className="text-2xl font-bold">
+                {getShelterStats().emergencyShelters}
+              </h3>
             </div>
-            <div className="p-3 bg-purple-100 text-purple-600 rounded-full">
-              <Radio className="h-6 w-6" />
+            <Shield className="h-8 w-8 text-green-500" />
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between text-sm">
+              <span>With Emergency Services</span>
+              <span className="font-medium">
+                {getShelterStats().emergencyShelters}
+              </span>
             </div>
           </div>
         </div>
       </div>
-      
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg shadow mb-6">
         <div className="border-b border-gray-200">
-          <nav className="flex">
-            <button 
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 ${
-                activeTab === 'hazards' 
-                  ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab("hazards")}
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "hazards"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
-              onClick={() => setActiveTab('hazards')}
             >
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Hazard Management
-                {getUnverifiedHazardsCount() > 0 && (
-                  <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                    {getUnverifiedHazardsCount()}
-                  </span>
-                )}
-              </div>
+              Hazards
             </button>
-            
-            <button 
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 ${
-                activeTab === 'users' 
-                  ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+            <button
+              onClick={() => setActiveTab("shelters")}
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "shelters"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
-              onClick={() => setActiveTab('users')}
             >
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                User Management
-              </div>
+              Shelters
             </button>
-            
-            <button 
-              className={`px-4 py-3 font-medium text-sm whitespace-nowrap border-b-2 ${
-                activeTab === 'nodes' 
-                  ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+            <button
+              onClick={() => setActiveTab("analytics")}
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === "analytics"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
-              onClick={() => setActiveTab('nodes')}
             >
-              <div className="flex items-center gap-2">
-                <Radio className="h-4 w-4" />
-                LoRa Nodes
-              </div>
+              Analytics
             </button>
           </nav>
         </div>
-        
-        <div className="p-4">
-          {activeTab === 'hazards' && (
-            <HazardFeed 
-              hazards={hazards}
-              onVerify={handleVerify}
-              onUpvote={handleUpvote}
-              isAdmin={true}
-            />
-          )}
-          
-          {activeTab === 'users' && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trust Level</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reports</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {mockUsers.map(user => (
-                    <tr key={user.id}>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-800 font-bold">
-                            {user.name.charAt(0)}
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                            <p className="text-xs text-gray-500">{user.id}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                          user.role === 'trusted' ? 'bg-green-100 text-green-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full ${
-                                user.trustLevel > 75 ? 'bg-green-500' : 
-                                user.trustLevel > 50 ? 'bg-blue-500' : 
-                                user.trustLevel > 25 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${user.trustLevel}%` }}
-                            />
-                          </div>
-                          <span className="ml-2 text-xs">{user.trustLevel}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        {user.reportCount} ({user.verifiedReportCount} verified)
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <button className="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
-                        <button className="text-red-600 hover:text-red-800">Suspend</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          
-          {activeTab === 'nodes' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">LoRa Network Status</h3>
-                <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                  Refresh Status
+
+        <div className="p-6">
+          {activeTab === "hazards" && (
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Hazard Reports</h2>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors">
+                  <Plus className="h-4 w-4" />
+                  Add Hazard
                 </button>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(7)].map((_, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Node {index + 1}</h4>
-                      <span className={`h-3 w-3 rounded-full ${index < 5 ? 'bg-green-500' : 'bg-red-500'}`} />
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reported
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {hazards.map((hazard) => (
+                      <tr key={hazard.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {hazard.type}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getSeverityColor(
+                              hazard.severity
+                            )}`}
+                          >
+                            {hazard.severity}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {hazard.location.lat.toFixed(4)},{" "}
+                            {hazard.location.lng.toFixed(4)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {new Date(hazard.reportedAt).toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              hazard.verified
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {hazard.verified ? "Verified" : "Pending"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "shelters" && (
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Safe Shelters</h2>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors">
+                  <Plus className="h-4 w-4" />
+                  Add Shelter
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {shelters.map((shelter) => (
+                  <div
+                    key={shelter.id}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="font-medium text-lg text-blue-600">
+                        {shelter.name}
+                      </h3>
+                      <div className="flex gap-2">
+                        <button className="text-blue-600 hover:text-blue-900">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button className="text-red-600 hover:text-red-900">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                    
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Status:</span>
-                        <span className={index < 5 ? 'text-green-600' : 'text-red-600'}>
-                          {index < 5 ? 'Online' : 'Offline'}
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-gray-500" />
+                        <span>{shelter.facilityType}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span>
+                          Capacity: {shelter.capacity}
+                          {shelter.currentOccupancy !== undefined && (
+                            <span className="text-green-600 ml-1">
+                              ({shelter.currentOccupancy} available)
+                            </span>
+                          )}
                         </span>
                       </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Battery:</span>
-                        <span>{Math.floor(Math.random() * 100)}%</span>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span>
+                          {shelter.location.lat.toFixed(4)},{" "}
+                          {shelter.location.lng.toFixed(4)}
+                        </span>
                       </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Signal:</span>
-                        <span>{Math.floor(Math.random() * 100)}%</span>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span>{shelter.contact}</span>
                       </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Last Message:</span>
-                        <span>{Math.floor(Math.random() * 60)} mins ago</span>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {shelter.facilities.map((facility, index) => (
+                          <span
+                            key={index}
+                            className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded"
+                          >
+                            {facility}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-medium text-blue-800 mb-2">Network Map</h3>
-                <p className="text-sm text-blue-600 mb-3">
-                  LoRa mesh network topology and coverage.
-                </p>
-                <div className="bg-white rounded-lg border p-3 flex items-center justify-center h-48">
-                  <Map className="h-12 w-12 text-gray-400" />
-                  <p className="ml-3 text-gray-500">LoRa network map visualization would render here</p>
+            </div>
+          )}
+
+          {activeTab === "analytics" && (
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Analytics Overview</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-medium mb-4">
+                    Hazard Distribution
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">
+                          High Severity
+                        </span>
+                        <span className="text-sm font-medium">
+                          {getHazardStats().highSeverity}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-red-600 h-2 rounded-full"
+                          style={{
+                            width: `${
+                              (getHazardStats().highSeverity /
+                                getHazardStats().total) *
+                              100
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">Verified</span>
+                        <span className="text-sm font-medium">
+                          {getHazardStats().verified}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{
+                            width: `${
+                              (getHazardStats().verified /
+                                getHazardStats().total) *
+                              100
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-medium mb-4">Shelter Capacity</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">
+                          Total Capacity
+                        </span>
+                        <span className="text-sm font-medium">
+                          {getShelterStats().totalCapacity}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: "100%" }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">Available</span>
+                        <span className="text-sm font-medium">
+                          {getShelterStats().availableCapacity}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
+                          style={{
+                            width: `${
+                              (getShelterStats().availableCapacity /
+                                getShelterStats().totalCapacity) *
+                              100
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

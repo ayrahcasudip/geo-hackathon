@@ -208,7 +208,7 @@ const SheltersPage: React.FC = () => {
       </div>
     );
   }
-
+  
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
@@ -218,10 +218,10 @@ const SheltersPage: React.FC = () => {
           emergencies.
         </p>
       </div>
-
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <SafeRouteMap
+          <SafeRouteMap 
             hazards={hazards}
             shelters={shelters}
             userLocation={userLocation || undefined}
@@ -230,11 +230,11 @@ const SheltersPage: React.FC = () => {
             height="60vh"
           />
         </div>
-
+        
         <div className="space-y-4">
           <div className="bg-white rounded-lg shadow p-4">
             <h2 className="text-lg font-semibold mb-3">Nearest Shelters</h2>
-
+            
             <div className="space-y-4">
               {shelters.map((shelter) => (
                 <div
@@ -249,17 +249,17 @@ const SheltersPage: React.FC = () => {
                   <h3 className="font-medium text-blue-600 mb-2">
                     {shelter.name}
                   </h3>
-
+                  
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <Building className="h-4 w-4 text-gray-500" />
                       <span>{shelter.facilityType}</span>
                     </div>
-
+                    
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-gray-500" />
                       <span>
-                        Capacity: {shelter.capacity}
+                        Capacity: {shelter.capacity} 
                         {shelter.currentOccupancy !== undefined && (
                           <span className="text-green-600 ml-1">
                             ({shelter.currentOccupancy} available)
@@ -267,14 +267,14 @@ const SheltersPage: React.FC = () => {
                         )}
                       </span>
                     </div>
-
+                    
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-gray-500" />
                       <span>
                         {(Math.random() * 5 + 0.5).toFixed(1)} km away
                       </span>
                     </div>
-
+                    
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-gray-500" />
                       <a
@@ -294,8 +294,8 @@ const SheltersPage: React.FC = () => {
                           {facility}
                         </span>
                       ))}
-                    </div>
-
+                  </div>
+                  
                     <button
                       onClick={() => handleShelterSelect(shelter)}
                       className="mt-3 w-full bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"

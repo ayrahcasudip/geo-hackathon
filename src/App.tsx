@@ -1,10 +1,11 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/Layout';
-import HomePage from './pages/HomePage';
-import HazardsPage from './pages/HazardsPage';
-import SheltersPage from './pages/SheltersPage';
-import AdminPage from './pages/AdminPage';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./components/layout/Layout";
+import HomePage from "./pages/HomePage";
+import HazardsPage from "./pages/HazardsPage";
+import SheltersPage from "./pages/SheltersPage";
+import AdminPage from "./pages/AdminPage";
+import ChatPage from "./pages/chat";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/hazards" element={<HazardsPage />} />
           <Route path="/shelters" element={<SheltersPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/chat" element={<ChatPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
