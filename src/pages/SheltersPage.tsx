@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Phone, Users, Building, MapPin, Navigation } from "lucide-react";
 import SafeRouteMap from "../components/map/SafeRouteMap";
-import { Location, SafeRoute, HazardReport } from "../types";
+import { Location, SafeRoute, HazardReport, SafeShelter } from "../types";
 import sheltersData from "../data/shelters.json";
 import { getHazards } from "../utils/fileOperations";
 
@@ -13,7 +13,9 @@ const KU_COORDINATES: Location = {
 
 const SheltersPage: React.FC = () => {
   const [userLocation, setUserLocation] = useState<Location | null>(null);
-  const [selectedShelter, setSelectedShelter] = useState<Location | null>(null);
+  const [selectedShelter, setSelectedShelter] = useState<SafeShelter | null>(
+    null
+  );
   const [safeRoutes, setSafeRoutes] = useState<SafeRoute[]>([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(
     null
@@ -128,22 +130,45 @@ const SheltersPage: React.FC = () => {
   // Calculate routes when shelter is selected
   useEffect(() => {
     if (selectedShelter && userLocation) {
-      const mockRoute: SafeRoute = {
-        id: "route-1",
+      const route: SafeRoute = {
+        id: `route-${selectedShelter.id}`,
         origin: userLocation,
-        destination: selectedShelter,
+        destination: selectedShelter.location,
         waypoints: [],
-        hazardsAvoided: [],
-        distance: 0,
-        estimatedTime: 0,
+        hazardsAvoided: hazards
+          .filter((hazard) => {
+            // Check if hazard is between user and shelter
+            const hazardLat = hazard.location.lat;
+            const hazardLng = hazard.location.lng;
+            const userLat = userLocation.lat;
+            const userLng = userLocation.lng;
+            const shelterLat = selectedShelter.location.lat;
+            const shelterLng = selectedShelter.location.lng;
+
+            // Simple check if hazard is within the bounding box of the route
+            const minLat = Math.min(userLat, shelterLat);
+            const maxLat = Math.max(userLat, shelterLat);
+            const minLng = Math.min(userLng, shelterLng);
+            const maxLng = Math.max(userLng, shelterLng);
+
+            return (
+              hazardLat >= minLat &&
+              hazardLat <= maxLat &&
+              hazardLng >= minLng &&
+              hazardLng <= maxLng
+            );
+          })
+          .map((hazard) => hazard.id),
+        distance: 0, // Will be calculated by the routing machine
+        estimatedTime: 0, // Will be calculated by the routing machine
       };
-      setSafeRoutes([mockRoute]);
+      setSafeRoutes([route]);
       setSelectedRouteIndex(0);
     }
-  }, [selectedShelter, userLocation]);
+  }, [selectedShelter, userLocation, hazards]);
 
-  const handleShelterSelect = (shelter: (typeof sheltersData.shelters)[0]) => {
-    setSelectedShelter(shelter.location);
+  const handleShelterSelect = (shelter: SafeShelter) => {
+    setSelectedShelter(shelter);
   };
 
   const handleRetryLocation = () => {
@@ -201,6 +226,7 @@ const SheltersPage: React.FC = () => {
             shelters={shelters}
             userLocation={userLocation || undefined}
             selectedRoute={selectedRoute}
+            onShelterSelect={handleShelterSelect}
             height="60vh"
           />
         </div>
@@ -214,8 +240,7 @@ const SheltersPage: React.FC = () => {
                 <div
                   key={shelter.id}
                   className={`border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer ${
-                    selectedShelter?.lat === shelter.location.lat &&
-                    selectedShelter?.lng === shelter.location.lng
+                    selectedShelter?.id === shelter.id
                       ? "border-blue-500 bg-blue-50"
                       : ""
                   }`}
@@ -270,6 +295,14 @@ const SheltersPage: React.FC = () => {
                         </span>
                       ))}
                     </div>
+
+                    <button
+                      onClick={() => handleShelterSelect(shelter)}
+                      className="mt-3 w-full bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Navigation className="h-4 w-4" />
+                      Navigate Here
+                    </button>
                   </div>
                 </div>
               ))}

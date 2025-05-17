@@ -48,7 +48,7 @@ const RoutingMachine = ({ route }: { route: SafeRoute }) => {
       router: L.Routing.osrmv1({
         serviceUrl: "https://router.project-osrm.org/route/v1",
       }),
-      routeWhileDragging: true,
+      routeWhileDragging: false,
       show: false,
       addWaypoints: false,
       draggableWaypoints: false,
@@ -84,6 +84,7 @@ interface SafeRouteMapProps {
   selectedRoute?: SafeRoute;
   userLocation?: Location;
   onMapClick?: (location: Location) => void;
+  onShelterSelect?: (shelter: SafeShelter) => void;
   height?: string;
 }
 
@@ -93,6 +94,7 @@ const SafeRouteMap: React.FC<SafeRouteMapProps> = ({
   selectedRoute,
   userLocation,
   onMapClick,
+  onShelterSelect,
   height = "100%",
 }) => {
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
@@ -236,6 +238,14 @@ const SafeRouteMap: React.FC<SafeRouteMapProps> = ({
                     ))}
                   </div>
                 </div>
+                {onShelterSelect && (
+                  <button
+                    onClick={() => onShelterSelect(shelter)}
+                    className="mt-3 w-full bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    Navigate Here
+                  </button>
+                )}
               </div>
             </Popup>
           </Marker>
