@@ -22,7 +22,8 @@ const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Welcome to SafeRoute Chat! How can we help you today?",
+      content:
+        "SafeRoute च्याटमा स्वागत छ! आज हामी तपाईंलाई कसरी सहायता गर्न सक्छौं?",
       sender: "system",
       timestamp: new Date(),
     },
